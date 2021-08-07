@@ -1,5 +1,5 @@
-module Yue.Parsable ( class IsParamParsable
-                    , parseParam) where
+module Yue.Router.Parsable ( class IsParamParsable
+                           , parseParam) where
 
 import Prelude
 
