@@ -7,7 +7,7 @@ import Prelude
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Node.HTTP (Request, Response, createServer, listen)
-import Yue.Config (ServerOption)
+import Yue.Server.Config (ServerOption)
 
 type Application = Request -> Response -> Effect Unit
 

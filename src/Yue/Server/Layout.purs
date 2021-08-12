@@ -1,10 +1,10 @@
-module Yue.Router ( RouterMap
-                  , getRouter
-                  , get
-                  , post
-                  , put
-                  , delete
-                  ) where
+module Yue.Server.Layout ( Layout
+                         , getRouter
+                         , get
+                         , post
+                         , put
+                         , delete
+                         ) where
 
 import Prelude
 
@@ -13,16 +13,16 @@ import Data.Maybe (Maybe(..))
 import Yue.Action (ActionT)
 import Yue.Router.Path (RouterPath, mapToRouterPath, stripPathPrefix)
 
-type RouterKey = { path :: RouterPath
+type LayoutKey = { path :: RouterPath
                  , method :: String
                  }
 
 -- | 整个路由布局定义。
-data RouterMap a = RouterNode RouterPath (Array (RouterMap a))
-                 | RouterEnd RouterKey a
+data Layout a = RouterNode RouterPath (Array (Layout a))
+              | RouterEnd LayoutKey a
 
 -- | 获取对应的路由Handler。
-getRouter :: forall a. RouterKey -> RouterMap a -> Maybe a
+getRouter :: forall a. LayoutKey -> Layout a -> Maybe a
 getRouter key (RouterNode path xs) = do
   path' <- stripPathPrefix path key.path
   let key' = key { path = path' }
@@ -30,12 +30,12 @@ getRouter key (RouterNode path xs) = do
 getRouter key (RouterEnd k a) | key == k = Just a
                               | otherwise = Nothing
 
-route' :: forall s m a. String -> String -> ActionT s m a -> RouterMap (ActionT s m a)
+route' :: forall s m a. String -> String -> ActionT s m a -> Layout (ActionT s m a)
 route' method path = RouterEnd key
   where path' = mapToRouterPath path
         key = { path: path', method }
 
-type RouterApp = forall s m a. String -> ActionT s m a -> RouterMap (ActionT s m a)
+type RouterApp = forall s m a. String -> ActionT s m a -> Layout (ActionT s m a)
 
 get :: RouterApp
 get = route' "GET"
