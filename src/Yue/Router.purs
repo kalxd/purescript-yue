@@ -10,7 +10,7 @@ import Prelude
 
 import Data.Array (findMap)
 import Data.Maybe (Maybe(..))
-import Yue.Router.Action (ActionT)
+import Yue.Action (ActionT)
 import Yue.Router.Path (RouterPath, mapToRouterPath, stripPathPrefix)
 
 type RouterKey = { path :: RouterPath

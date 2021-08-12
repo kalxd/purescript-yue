@@ -2,14 +2,12 @@ module Main where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Effect.Console (log)
 import Node.Encoding (Encoding(..))
-import Node.HTTP (ListenOptions, Request, Response, createServer, listen, requestURL, responseAsStream, setStatusCode)
+import Node.HTTP (requestURL, responseAsStream, setStatusCode)
 import Node.Stream (end, writeString)
-
-type Application = Request -> Response -> Effect Unit
+import Yue.Server (Application, runServer)
 
 simpleApplication :: Application
 simpleApplication req res = do
@@ -19,14 +17,8 @@ simpleApplication req res = do
   void $ writeString output UTF8 msg (pure unit)
   end output (pure unit)
 
-serverListen :: ListenOptions
-serverListen = { backlog: Nothing
-               , hostname: "127.0.0.1"
-               , port: 3000
-               }
-
 main :: Effect Unit
 main = do
-  server <- createServer simpleApplication
-  listen server serverListen do
+  let option = { addr: "127.0.0.1", port: 3000 }
+  runServer option simpleApplication do
     log "server starting!"
