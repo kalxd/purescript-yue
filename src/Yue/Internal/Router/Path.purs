@@ -1,16 +1,16 @@
-module Yue.Router.Path ( RouterSegment(..)
-                       , RouterPath
-                       , mapToRouterPath
-                       , stripPathPrefix
-                       ) where
+module Yue.Router.Internal.Path ( RouterSegment(..)
+                                , RouterPath
+                                , mapToRouterPath
+                                , stripPathPrefix
+                                ) where
 
 import Prelude
 
-import Data.Array (uncons)
+import Data.Array (mapMaybe, uncons)
 import Data.Maybe (Maybe(..))
+import Data.String (Pattern(..), split, trim)
 import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NonEmptyString
-import Yue.Internal.Util (splitString)
 
 -- | 路径描述。
 data RouterSegment = RouterLit NonEmptyString -- | 纯文本路径，不需要解析。
@@ -24,15 +24,22 @@ instance Show RouterSegment where
 
 type RouterPath = Array RouterSegment
 
+-- 把一条String，根据"/"分割成多条非空String，自动过滤掉空组。
+--
+-- splitString "a/c" = ["a", "c"]
+-- splitString "/a//c" = ["a", "c"]
+splitString :: String -> Array NonEmptyString
+splitString = mapMaybe NonEmptyString.fromString <<< split (Pattern "/") <<< trim
+
 -- 将路径小一块转化成`RouterPath`。
-mapRouterSegment :: NonEmptyString.NonEmptyString -> RouterSegment
-mapRouterSegment s = case NonEmptyString.stripPrefix (NonEmptyString.Pattern ":") s of
+toSegment :: NonEmptyString.NonEmptyString -> RouterSegment
+toSegment s = case NonEmptyString.stripPrefix (Pattern ":") s of
   Just a -> RouterParam a
   Nothing -> RouterLit s
 
 -- | 将外部的`String`转化成`RouterPath`。
 mapToRouterPath :: String -> RouterPath
-mapToRouterPath = map mapRouterSegment <<< splitString
+mapToRouterPath = map toSegment <<< splitString
 
 -- | 过滤前半相同部分，留下剩余未匹配部分。
 stripPathPrefix :: RouterPath -> RouterPath -> Maybe RouterPath
