@@ -11,7 +11,7 @@ import Prelude
 import Data.Array (findMap)
 import Data.Maybe (Maybe(..))
 import Yue.Action (ActionT)
-import Yue.Router.Path (RouterPath, mapToRouterPath, stripPathPrefix)
+import Yue.Internal.Router.Path (RouterPath, mapToRouterPath, stripPathPrefix)
 
 type LayoutKey = { path :: RouterPath
                  , method :: String
