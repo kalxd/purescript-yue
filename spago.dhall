@@ -12,7 +12,7 @@ to generate this file without the comments in this block.
 -}
 { name = "yue"
 , dependencies =
-  [ "aff"
+  [ "arrays"
   , "console"
   , "effect"
   , "either"
@@ -24,7 +24,9 @@ to generate this file without the comments in this block.
   , "numbers"
   , "prelude"
   , "psci-support"
-  , "unordered-collections"
+  , "strings"
+  , "transformers"
+  , "tuples"
   , "uri"
   ]
 , packages = ./packages.dhall
