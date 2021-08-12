@@ -1,7 +1,9 @@
 module Yue.Internal.Router.Path ( RouterSegment(..)
                                 , RouterPath
+                                , RequestPath
                                 , mapToRouterPath
                                 , stripPathPrefix
+                                , urlToRequestPath
                                 ) where
 
 import Prelude
@@ -45,3 +47,19 @@ stripPathPrefix xs ys = do
   if x.head == y.head
     then stripPathPrefix x.tail y.tail
     else Nothing
+
+-- | 一条真实的请求，分割成小块路径名。它被用于内部的路径比较。
+-- | * 当一条进来时，首先从request url找出url path。
+-- | * 将url path转化成小块列表的`RequestPath`。
+-- | * 依次与已定义`RouterPath`对比。
+-- |
+-- | 与`RouterPath`不同的是，它不需要处理`:<name>`这样的格式。
+-- |
+-- | ```
+-- | "/a/c" = ["a", "c"]
+-- | "/a/:c" = ["a", ":c"]
+-- | ```
+newtype RequestPath = RequestPath (Array NonEmptyString)
+
+urlToRequestPath :: String -> RequestPath
+urlToRequestPath = RequestPath <<< splitString
