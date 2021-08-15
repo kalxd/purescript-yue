@@ -11,7 +11,8 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
 import Node.HTTP (Request, Response, createServer, listen)
-import Yue.Server.Action (ActionT, mkAction)
+
+import Yue.Internal.Type.Action (ActionT, mkAction)
 import Yue.Server.Config (ServerOption)
 
 type Application = Request -> Response -> Effect Unit

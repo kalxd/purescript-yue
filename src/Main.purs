@@ -5,8 +5,9 @@ import Prelude
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
+import Yue.Internal.Type.Action (ActionT)
 import Yue.Server (runServer')
-import Yue.Server.Action (ActionT, getQuery, setText)
+import Yue.Server.Action (getQuery, setText)
 
 simpleApplication :: ActionT Effect Unit
 simpleApplication = do

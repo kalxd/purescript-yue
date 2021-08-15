@@ -1,4 +1,4 @@
-module Yue.Internal.Query where
+module Yue.Internal.Type.Query where
 
 import Control.Category ((<<<))
 import Data.Maybe (Maybe)
