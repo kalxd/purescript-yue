@@ -8,11 +8,16 @@ import Effect.Console (log)
 import Yue.Internal.Type.Action (ActionT)
 import Yue.Server (runServer')
 import Yue.Server.Action (getQuery, setText)
+import Yue.Server.Router (route)
 
 simpleApplication :: ActionT Effect Unit
 simpleApplication = do
-  a <- getQuery "a"
-  setText $ fromMaybe "hello" a
+  route "/a" do
+    a <- getQuery "a"
+    setText $ fromMaybe "hello" a
+  route "/b" do
+    b <- getQuery "b"
+    setText $ fromMaybe "b" b
 
 main :: Effect Unit
 main = do
