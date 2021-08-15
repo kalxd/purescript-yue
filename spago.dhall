@@ -27,10 +27,8 @@ to generate this file without the comments in this block.
   , "numbers"
   , "prelude"
   , "psci-support"
-  , "refs"
   , "strings"
   , "transformers"
-  , "tuples"
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
