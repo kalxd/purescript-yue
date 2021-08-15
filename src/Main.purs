@@ -7,8 +7,9 @@ import Effect.Console (log)
 import Yue.Server (runServer')
 import Yue.Server.Action (ActionT, setText)
 
-simpleApplication :: ActionT (Effect Unit)
+simpleApplication :: ActionT Effect Unit
 simpleApplication = do
+  setText "hello my world"
   setText "hello world"
 
 main :: Effect Unit

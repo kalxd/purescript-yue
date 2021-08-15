@@ -6,7 +6,7 @@ module Yue.Server ( runServer
 import Prelude
 
 import Control.Monad.Except.Trans (runExceptT)
-import Control.Monad.Reader (runReader)
+import Control.Monad.Reader.Trans (runReaderT)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Effect (Effect)
@@ -16,19 +16,19 @@ import Yue.Server.Config (ServerOption)
 
 type Application = Request -> Response -> Effect Unit
 
-runServer' :: ServerOption -> ActionT (Effect Unit) -> Effect Unit -> Effect Unit
+runServer' :: ServerOption -> ActionT Effect Unit -> Effect Unit -> Effect Unit
 runServer' { addr, port } action callback = do
   server <- createServer \req res -> do
     let env = mkAction req res
-    case flip runReader env $ runExceptT action of
-      (Right o) -> o
+    r <- flip runReaderT env $ runExceptT action
+    case r of
+      (Right o) -> pure o
       (Left _) -> pure unit
   listen server option callback
   where option = { backlog: Nothing
                  , hostname: addr
                  , port
                  }
-
 
 runServer :: ServerOption -> Application -> Effect Unit -> Effect Unit
 runServer { addr, port } application callback = do

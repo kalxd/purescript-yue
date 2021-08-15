@@ -8,8 +8,7 @@ module Yue.Server.Action ( ActionRequest
 import Prelude
 
 import Control.Monad.Except.Trans (ExceptT)
-import Control.Monad.Reader (Reader)
-import Control.Monad.Reader.Trans (asks)
+import Control.Monad.Reader.Trans (ReaderT, asks)
 import Effect.Class (class MonadEffect, liftEffect)
 import Node.Encoding (Encoding(..))
 import Node.HTTP (Request, Response, responseAsStream)
@@ -24,18 +23,18 @@ type ActionRequest = { req :: Request
                      , res :: Response
                      }
 
-type ActionT = ExceptT ActionE (Reader ActionRequest)
+type ActionT m = ExceptT ActionE (ReaderT ActionRequest m)
 
 mkAction :: Request -> Response -> ActionRequest
 mkAction req res = { req, res }
 
-askResponse :: ActionT Response
+askResponse :: forall m. Monad m => ActionT m Response
 askResponse = asks _.res
 
-setText :: forall m. MonadEffect m => String -> ActionT (m Unit)
+setText :: forall m. MonadEffect m => String -> ActionT m Unit
 setText text = do
   res <- askResponse
-  pure $ liftEffect do
+  liftEffect do
     let s = responseAsStream res
     void $ writeString s UTF8 text (pure unit)
     end s $ pure unit
