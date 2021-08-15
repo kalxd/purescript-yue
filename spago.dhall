@@ -16,12 +16,14 @@ to generate this file without the comments in this block.
   , "console"
   , "effect"
   , "either"
+  , "foreign-object"
   , "integers"
   , "maybe"
   , "node-buffer"
   , "node-http"
   , "node-streams"
   , "node-url"
+  , "nullable"
   , "numbers"
   , "prelude"
   , "psci-support"
@@ -29,6 +31,7 @@ to generate this file without the comments in this block.
   , "strings"
   , "transformers"
   , "tuples"
+  , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs", "test/**/*.purs" ]

@@ -2,15 +2,16 @@ module Main where
 
 import Prelude
 
+import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
 import Yue.Server (runServer')
-import Yue.Server.Action (ActionT, setText)
+import Yue.Server.Action (ActionT, getQuery, setText)
 
 simpleApplication :: ActionT Effect Unit
 simpleApplication = do
-  setText "hello my world"
-  setText "hello world"
+  a <- getQuery "a"
+  setText $ fromMaybe "hello" a
 
 main :: Effect Unit
 main = do
