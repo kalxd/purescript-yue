@@ -4,6 +4,7 @@ module Yue.Server.Action ( getURL
                          , tryParam
                          , setText
                          , finish
+                         , throw
                          ) where
 
 import Prelude
@@ -24,33 +25,30 @@ import Yue.Internal.Type.MatchState (MatchState(..))
 import Yue.Internal.Type.Parsable (class IsParamParsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery)
 
-finish :: forall m a. Monad m => ActionT m a
-finish = throwError ActionFinish
-
-askRequest :: forall m. Monad m => ActionT m Request
+askRequest :: forall e m. Monad m => ActionT e m Request
 askRequest = asks _.req
 
-askResponse :: forall m. Monad m => ActionT m Response
+askResponse :: forall e m. Monad m => ActionT e m Response
 askResponse = asks _.res
 
 -- | 获取当前访问地址对象。
-getURL :: forall m. Monad m => ActionT m URL
+getURL :: forall e m. Monad m => ActionT e m URL
 getURL = asks _.url
 
-getQuery :: forall m. Monad m => String -> ActionT m (Maybe String)
+getQuery :: forall e m. Monad m => String -> ActionT e m (Maybe String)
 getQuery key = do
   query <- asks _.query
   pure $ lookupQuery key =<< query
 
-tryParam :: forall m a. IsParamParsable a => Monad m => String -> ActionT m (Maybe a)
+tryParam :: forall e m a. IsParamParsable a => Monad m => String -> ActionT e m (Maybe a)
 tryParam key = gets f
   where f (MatchState s) = Map.lookup key s.paramMap >>= hush <<< parseParam
 
 -- | 获取当前访问原始地址。
-getURLString :: forall m. Monad m => ActionT m String
+getURLString :: forall e m. Monad m => ActionT e m String
 getURLString = requestURL <$> askRequest
 
-setText :: forall m. MonadEffect m => String -> ActionT m Unit
+setText :: forall e m. MonadEffect m => String -> ActionT e m Unit
 setText text = do
   res <- askResponse
   liftEffect do
@@ -58,3 +56,9 @@ setText text = do
     void $ writeString s UTF8 text (pure unit)
     end s $ pure unit
   finish
+
+finish :: forall e m a. Monad m => ActionT e m a
+finish = throwError ActionFinish
+
+throw :: forall e m a. Monad m => e -> ActionT e m a
+throw = throwError <<< ActionError

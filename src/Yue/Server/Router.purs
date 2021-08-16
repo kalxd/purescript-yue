@@ -27,7 +27,7 @@ matchRouterPath (RequestPath rs) xs = do
 
 
 -- | 匹配满足访问地址的路由，不对method作区别。
-route :: forall m a. Monad m => String -> ActionT m a -> ActionT m Unit
+route :: forall e m a. Monad m => String -> ActionT e m a -> ActionT e m Unit
 route path action = do
   (MatchState s) <- get
   let routerPath = toRouterPath path

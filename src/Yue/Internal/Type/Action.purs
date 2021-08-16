@@ -14,8 +14,8 @@ import Yue.Internal.Type.MatchState (MatchState)
 import Yue.Internal.Type.Query (Query, mkQuery)
 
 -- | 一条请求因何而中断。
-data ActionST = ActionFinish
-              | ActionError
+data ActionST e = ActionFinish
+                | ActionError e
 
 -- | 请求的全部原始上下文，其中也包含预处理过的信息，如query、path。
 type ActionEnv = { req :: Request
@@ -30,4 +30,4 @@ mkActionEnv req res = { req, res, url, query }
         query = mkQuery <$> toMaybe url.query
 
 -- | 最核心的类型，这是一个路由的定义。
-type ActionT m = ExceptT ActionST (ReaderT ActionEnv (StateT MatchState m))
+type ActionT e m = ExceptT (ActionST e) (ReaderT ActionEnv (StateT MatchState m))

@@ -2,19 +2,20 @@ module Main where
 
 import Prelude
 
-import Data.Maybe (fromMaybe)
+import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
 import Yue.Internal.Type.Action (ActionT)
 import Yue.Server (runServer)
-import Yue.Server.Action (setText, tryParam)
+import Yue.Server.Action (setText, throw, tryParam)
 import Yue.Server.Router (route)
 
-simpleApplication :: ActionT Effect Unit
+simpleApplication :: ActionT String Effect Unit
 simpleApplication = do
   route "/item/:id" do
     route "/a/:a" do
       a <- tryParam "a"
+      when (a == Just 1) $ throw "sb"
       setText $ show $ fromMaybe 1 a
   route "/pro/:id/i/:addr" do
     id <- tryParam "addr"
