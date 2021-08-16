@@ -29,6 +29,7 @@ to generate this file without the comments in this block.
   , "psci-support"
   , "strings"
   , "transformers"
+  , "tuples"
   , "unordered-collections"
   , "unsafe-coerce"
   ]

@@ -20,6 +20,7 @@ import Node.HTTP (Request, Response, requestURL, responseAsStream)
 import Node.Stream (end, writeString)
 import Node.URL (URL)
 import Yue.Internal.Type.Action (ActionST(..), ActionT)
+import Yue.Internal.Type.MatchState (MatchState(..))
 import Yue.Internal.Type.Parsable (class IsParamParsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery)
 
@@ -43,7 +44,7 @@ getQuery key = do
 
 tryParam :: forall m a. IsParamParsable a => Monad m => String -> ActionT m (Maybe a)
 tryParam key = gets f
-  where f s = Map.lookup key s.paramHash >>= hush <<< parseParam
+  where f (MatchState s) = Map.lookup key s.paramMap >>= hush <<< parseParam
 
 -- | 获取当前访问原始地址。
 getURLString :: forall m. Monad m => ActionT m String
