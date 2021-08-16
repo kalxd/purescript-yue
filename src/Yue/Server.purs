@@ -18,14 +18,18 @@ import Yue.Internal.Type.ResponseError (class IsResponseError, errorContent, err
 import Yue.Internal.Util (setResponseDefHeader, setResponseJson)
 import Yue.Server.Config (ServerOption)
 
-sendError :: forall e. IsResponseError e => Response -> ActionST e -> Effect Unit
-sendError _ ActionFinish = pure unit
-sendError res (ActionError e) = do
+setResponseError :: forall e. IsResponseError e => Response -> e -> Effect Unit
+setResponseError res e = do
   let code = errorStatus e
       msg = errorContent e
   setStatusCode res code
   setResponseDefHeader res
   setResponseJson res msg
+
+sendActionError :: forall e. IsResponseError e => Response -> ActionST e -> Effect Unit
+sendActionError _ ActionFinish = pure unit
+sendActionError res (ActionInnerError e) = setResponseError res e
+sendActionError res (ActionError e) = setResponseError res e
 
 runServer :: forall e. IsResponseError e => ServerOption -> ActionT e Effect Unit -> Effect Unit -> Effect Unit
 runServer { addr, port } action callback = do
@@ -35,7 +39,7 @@ runServer { addr, port } action callback = do
     r <- flip evalStateT st $ flip runReaderT env $ runExceptT action
     case r of
       (Right o) -> pure o
-      (Left e) -> sendError res e
+      (Left e) -> sendActionError res e
   listen server option callback
   where option = { backlog: Nothing
                  , hostname: addr

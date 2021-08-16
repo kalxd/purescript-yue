@@ -2,7 +2,9 @@ module Yue.Server.Action ( getURL
                          , getURLString
                          , getQuery
                          , tryParam
+                         , param
                          , setText
+                         , setJson
                          , finish
                          , throw
                          , throwE
@@ -10,22 +12,22 @@ module Yue.Server.Action ( getURL
 
 import Prelude
 
-import Control.Monad.Except.Trans (throwError)
+import Control.Monad.Except.Trans (except, throwError, withExceptT)
 import Control.Monad.Reader.Trans (asks)
-import Control.Monad.State.Trans (gets)
+import Control.Monad.State.Trans (get, gets)
+import Data.Argonaut.Encode.Class (class EncodeJson)
 import Data.Either (hush)
 import Data.HashMap as Map
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect, liftEffect)
-import Node.Encoding (Encoding(..))
-import Node.HTTP (Request, Response, requestURL, responseAsStream)
-import Node.Stream (end, writeString)
+import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL)
 import Yue.Internal.Type.Action (ActionST(..), ActionT)
-import Yue.Internal.Type.Error (AppError(..))
+import Yue.Internal.Type.Error (ActionError(..), AppError(..))
 import Yue.Internal.Type.MatchState (MatchState(..))
 import Yue.Internal.Type.Parsable (class IsParamParsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery)
+import Yue.Internal.Util (setResponseDefHeader, setResponseJson, setResponseText)
 
 askRequest :: forall e m. Monad m => ActionT e m Request
 askRequest = asks _.req
@@ -46,17 +48,31 @@ tryParam :: forall e m a. IsParamParsable a => Monad m => String -> ActionT e m 
 tryParam key = gets f
   where f (MatchState s) = Map.lookup key s.paramMap >>= hush <<< parseParam
 
+param :: forall e m a. IsParamParsable a => Monad m => String -> ActionT e m a
+param key = do
+  (MatchState s) <- get
+  case Map.lookup key s.paramMap of
+    Just x -> withExceptT (ActionInnerError <<< ActionParamError) $ except $ parseParam x
+    Nothing -> throwError $ ActionInnerError $ ActionParamError "参数未提供"
+
 -- | 获取当前访问原始地址。
 getURLString :: forall e m. Monad m => ActionT e m String
 getURLString = requestURL <$> askRequest
 
+-- | 设置响应体。
 setText :: forall e m. MonadEffect m => String -> ActionT e m Unit
 setText text = do
   res <- askResponse
+  liftEffect $ setResponseText res text
+  finish
+
+-- | 设置响应体。
+setJson :: forall e m a. EncodeJson a => MonadEffect m => a -> ActionT e m Unit
+setJson a = do
+  res <- askResponse
   liftEffect do
-    let s = responseAsStream res
-    void $ writeString s UTF8 text (pure unit)
-    end s $ pure unit
+    setResponseDefHeader res
+    setResponseJson res a
   finish
 
 finish :: forall e m a. Monad m => ActionT e m a
@@ -67,4 +83,4 @@ throw = throwError <<< ActionError
 
 -- | 特供版，抛出的错误自动包装在`AppError`。
 throwE :: forall e m a. Monad m => e -> ActionT (AppError e) m a
-throwE = throw <<< AppOther
+throwE = throw <<< AppError

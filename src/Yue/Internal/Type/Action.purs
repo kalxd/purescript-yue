@@ -10,12 +10,14 @@ import Data.Maybe (Maybe)
 import Data.Nullable (toMaybe)
 import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL, parse)
+import Yue.Internal.Type.Error (ActionError)
 import Yue.Internal.Type.MatchState (MatchState)
 import Yue.Internal.Type.Query (Query, mkQuery)
 
 -- | 一条请求因何而中断。
-data ActionST e = ActionFinish
-                | ActionError e
+data ActionST e = ActionFinish -- ^ 中断信号。
+                | ActionInnerError ActionError -- ^ 内部错误。
+                | ActionError e -- ^ 用户自定义错误。
 
 -- | 请求的全部原始上下文，其中也包含预处理过的信息，如query、path。
 type ActionEnv = { req :: Request
