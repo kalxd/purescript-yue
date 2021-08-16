@@ -6,16 +6,17 @@ import Data.Maybe (Maybe(..), fromMaybe)
 import Effect (Effect)
 import Effect.Console (log)
 import Yue.Internal.Type.Action (ActionT)
+import Yue.Internal.Type.Error (AppError)
 import Yue.Server (runServer)
-import Yue.Server.Action (setText, throw, tryParam)
+import Yue.Server.Action (setText, throwE, tryParam)
 import Yue.Server.Router (route)
 
-simpleApplication :: ActionT String Effect Unit
+simpleApplication :: ActionT (AppError String) Effect Unit
 simpleApplication = do
   route "/item/:id" do
     route "/a/:a" do
       a <- tryParam "a"
-      when (a == Just 1) $ throw "sb"
+      when (a == Just 1) $ throwE "sb"
       setText $ show $ fromMaybe 1 a
   route "/pro/:id/i/:addr" do
     id <- tryParam "addr"

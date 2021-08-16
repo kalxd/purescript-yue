@@ -5,6 +5,7 @@ module Yue.Server.Action ( getURL
                          , setText
                          , finish
                          , throw
+                         , throwE
                          ) where
 
 import Prelude
@@ -21,6 +22,7 @@ import Node.HTTP (Request, Response, requestURL, responseAsStream)
 import Node.Stream (end, writeString)
 import Node.URL (URL)
 import Yue.Internal.Type.Action (ActionST(..), ActionT)
+import Yue.Internal.Type.Error (AppError(..))
 import Yue.Internal.Type.MatchState (MatchState(..))
 import Yue.Internal.Type.Parsable (class IsParamParsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery)
@@ -62,3 +64,7 @@ finish = throwError ActionFinish
 
 throw :: forall e m a. Monad m => e -> ActionT e m a
 throw = throwError <<< ActionError
+
+-- | 特供版，抛出的错误自动包装在`AppError`。
+throwE :: forall e m a. Monad m => e -> ActionT (AppError e) m a
+throwE = throw <<< AppOther
