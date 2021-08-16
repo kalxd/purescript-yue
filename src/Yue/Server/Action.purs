@@ -1,6 +1,7 @@
 module Yue.Server.Action ( getURL
                          , getURLString
                          , getQuery
+                         , tryParam
                          , setText
                          , finish
                          ) where
@@ -9,6 +10,9 @@ import Prelude
 
 import Control.Monad.Except.Trans (throwError)
 import Control.Monad.Reader.Trans (asks)
+import Control.Monad.State.Trans (gets)
+import Data.Either (hush)
+import Data.HashMap as Map
 import Data.Maybe (Maybe)
 import Effect.Class (class MonadEffect, liftEffect)
 import Node.Encoding (Encoding(..))
@@ -16,6 +20,7 @@ import Node.HTTP (Request, Response, requestURL, responseAsStream)
 import Node.Stream (end, writeString)
 import Node.URL (URL)
 import Yue.Internal.Type.Action (ActionST(..), ActionT)
+import Yue.Internal.Type.Parsable (class IsParamParsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery)
 
 finish :: forall m a. Monad m => ActionT m a
@@ -35,6 +40,10 @@ getQuery :: forall m. Monad m => String -> ActionT m (Maybe String)
 getQuery key = do
   query <- asks _.query
   pure $ lookupQuery key =<< query
+
+tryParam :: forall m a. IsParamParsable a => Monad m => String -> ActionT m (Maybe a)
+tryParam key = gets f
+  where f s = Map.lookup key s.paramHash >>= hush <<< parseParam
 
 -- | 获取当前访问原始地址。
 getURLString :: forall m. Monad m => ActionT m String

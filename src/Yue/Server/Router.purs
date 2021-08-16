@@ -1,4 +1,4 @@
-module Yue.Server.Router where
+module Yue.Server.Router (route) where
 
 import Prelude
 
