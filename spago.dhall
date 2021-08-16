@@ -29,6 +29,7 @@ to generate this file without the comments in this block.
   , "psci-support"
   , "strings"
   , "transformers"
+  , "unordered-collections"
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
