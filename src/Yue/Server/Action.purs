@@ -1,6 +1,7 @@
 module Yue.Server.Action ( getURL
                          , getURLString
-                         , getQuery
+                         , tryQuery
+                         , query
                          , tryParam
                          , param
                          , setText
@@ -39,10 +40,18 @@ askResponse = asks _.res
 getURL :: forall e m. Monad m => ActionT e m URL
 getURL = asks _.url
 
-getQuery :: forall e m. Monad m => String -> ActionT e m (Maybe String)
-getQuery key = do
-  query <- asks _.query
-  pure $ lookupQuery key =<< query
+tryQuery :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
+tryQuery key = do
+  q <- asks _.query
+  case lookupQuery key =<< q of
+    Nothing -> pure Nothing
+    Just v -> withExceptT (ActionInnerError <<< ActionQueryError) $ except $ parseParam v
+query :: forall e m a. Parsable a => Monad m => String -> ActionT e m a
+query key = do
+  mv <- tryQuery key
+  case mv of
+    Just v -> pure v
+    Nothing -> throwError $ ActionInnerError $ ActionQueryError $ "query参数" <> key <> "未提供。"
 
 tryParam :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
 tryParam key = gets f
@@ -53,7 +62,7 @@ param key = do
   (MatchState s) <- get
   case Map.lookup key s.paramMap of
     Just x -> withExceptT (ActionInnerError <<< ActionParamError) $ except $ parseParam x
-    Nothing -> throwError $ ActionInnerError $ ActionParamError "参数未提供"
+    Nothing -> throwError $ ActionInnerError $ ActionParamError $ "param参数" <> key <> "未提供。"
 
 -- | 获取当前访问原始地址。
 getURLString :: forall e m. Monad m => ActionT e m String

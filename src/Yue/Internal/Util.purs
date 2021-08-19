@@ -6,6 +6,8 @@ import Prelude
 import Data.Argonaut.Core (stringify) as JSON
 import Data.Argonaut.Encode (class EncodeJson, encodeJson) as JSON
 import Data.Array (mapMaybe)
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Data.String (Pattern(..), split, trim)
 import Data.String.NonEmpty (NonEmptyString, fromString)
 import Effect (Effect)
@@ -37,3 +39,11 @@ setResponseJson res = setResponseText res <<< JSON.stringify <<< JSON.encodeJson
 setResponseDefHeader :: Response -> Effect Unit
 setResponseDefHeader res = do
   setHeader res "Content-Type" "appliction/json"
+
+swapEitherMaybe :: forall a b. Maybe (Either b a) -> Either b (Maybe a)
+swapEitherMaybe Nothing = Right Nothing
+swapEitherMaybe (Just a) = Just <$> a
+
+mapEitherLeft :: forall a b v. (a -> b) -> Either a v -> Either b v
+mapEitherLeft f (Left a) = Left $ f a
+mapEitherLeft _ (Right a) = Right a
