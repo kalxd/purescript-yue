@@ -2,23 +2,19 @@ module Yue.Server.Action ( getURL
                          , getURLString
                          , tryQuery
                          , query
-                         , tryParam
-                         , param
                          , setText
                          , setJson
                          , finish
                          , throw
                          , throwE
+                         , module E
                          ) where
 
 import Prelude
 
 import Control.Monad.Except.Trans (except, throwError, withExceptT)
 import Control.Monad.Reader.Trans (asks)
-import Control.Monad.State.Trans (get, gets)
 import Data.Argonaut.Encode.Class (class EncodeJson)
-import Data.Either (hush)
-import Data.HashMap as Map
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Effect.Class (class MonadEffect, liftEffect)
@@ -26,10 +22,12 @@ import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL)
 import Yue.Internal.Type.Action (ActionST(..), ActionT, throwChecked)
 import Yue.Internal.Type.Error (AppError(..), YueError(..))
-import Yue.Internal.Type.MatchState (MatchState(..))
 import Yue.Internal.Type.Parsable (class Parsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery, mkQuery)
 import Yue.Internal.Util (setResponseDefHeader, setResponseJson, setResponseText)
+
+import Yue.Server.Param (tryParam, param) as E
+import Yue.Server.Header (tryHeader, header, setHeader) as E
 
 askRequest :: forall e m. Monad m => ActionT e m Request
 askRequest = asks _.req
@@ -54,17 +52,6 @@ query key = do
   case mv of
     Just v -> pure v
     Nothing -> throwChecked $ "query参数" <> key <> "未提供。"
-
-tryParam :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
-tryParam key = gets f
-  where f (MatchState s) = Map.lookup key s.paramMap >>= hush <<< parseParam
-
-param :: forall e m a. Parsable a => Monad m => String -> ActionT e m a
-param key = do
-  (MatchState s) <- get
-  case Map.lookup key s.paramMap of
-    Just x -> withExceptT (ActionChecked <<< YueError) $ except $ parseParam x
-    Nothing -> throwChecked $ "param参数" <> key <> "未提供。"
 
 -- | 获取当前访问原始地址。
 getURLString :: forall e m. Monad m => ActionT e m String
