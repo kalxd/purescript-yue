@@ -28,7 +28,7 @@ setResponseError res e = do
 
 sendActionError :: forall e. IsResponseError e => Response -> ActionST e -> Effect Unit
 sendActionError _ ActionFinish = pure unit
-sendActionError res (ActionInnerError e) = setResponseError res e
+sendActionError res (ActionChecked e) = setResponseError res e
 sendActionError res (ActionError e) = setResponseError res e
 
 runServer :: forall e. IsResponseError e => ServerOption -> ActionT e Effect Unit -> Effect Unit -> Effect Unit

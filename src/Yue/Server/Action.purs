@@ -24,8 +24,8 @@ import Data.Nullable (toMaybe)
 import Effect.Class (class MonadEffect, liftEffect)
 import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL)
-import Yue.Internal.Type.Action (ActionST(..), ActionT)
-import Yue.Internal.Type.Error (ActionError(..), AppError(..))
+import Yue.Internal.Type.Action (ActionST(..), ActionT, throwChecked)
+import Yue.Internal.Type.Error (AppError(..), YueError(..))
 import Yue.Internal.Type.MatchState (MatchState(..))
 import Yue.Internal.Type.Parsable (class Parsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery, mkQuery)
@@ -46,13 +46,14 @@ tryQuery key = do
   url <- getURL
   case lookupQuery key =<< mkQuery <$> toMaybe url.query of
     Nothing -> pure Nothing
-    Just v -> withExceptT (ActionInnerError <<< ActionQueryError) $ except $ parseParam v
+    Just v -> withExceptT (ActionChecked <<< YueError) $ except $ parseParam v
+
 query :: forall e m a. Parsable a => Monad m => String -> ActionT e m a
 query key = do
   mv <- tryQuery key
   case mv of
     Just v -> pure v
-    Nothing -> throwError $ ActionInnerError $ ActionQueryError $ "query参数" <> key <> "未提供。"
+    Nothing -> throwChecked $ "query参数" <> key <> "未提供。"
 
 tryParam :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
 tryParam key = gets f
@@ -62,8 +63,8 @@ param :: forall e m a. Parsable a => Monad m => String -> ActionT e m a
 param key = do
   (MatchState s) <- get
   case Map.lookup key s.paramMap of
-    Just x -> withExceptT (ActionInnerError <<< ActionParamError) $ except $ parseParam x
-    Nothing -> throwError $ ActionInnerError $ ActionParamError $ "param参数" <> key <> "未提供。"
+    Just x -> withExceptT (ActionChecked <<< YueError) $ except $ parseParam x
+    Nothing -> throwChecked $ "param参数" <> key <> "未提供。"
 
 -- | 获取当前访问原始地址。
 getURLString :: forall e m. Monad m => ActionT e m String
