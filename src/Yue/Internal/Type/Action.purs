@@ -3,9 +3,10 @@ module Yue.Internal.Type.Action where
 
 import Prelude
 
-import Control.Monad.Except.Trans (ExceptT, throwError)
+import Control.Monad.Except.Trans (ExceptT, mapExceptT, throwError)
 import Control.Monad.Reader.Trans (ReaderT)
 import Control.Monad.State.Trans (StateT)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL, parse)
@@ -36,3 +37,18 @@ throwChecked = throwError <<< ActionChecked <<< YueError
 throwCheckedMaybe :: forall e m a. Monad m => String -> Maybe a -> ActionT e m a
 throwCheckedMaybe e Nothing = throwChecked e
 throwCheckedMaybe _ (Just a) = pure a
+
+-- 作用同`except`一致，它只是包装了一层而已。
+exceptEither :: forall e m a. Monad m => Either String a -> ActionT e m a
+exceptEither (Left e) = throwChecked e
+exceptEither (Right a) = pure a
+
+-- 我现在也看不懂了。
+-- 核用就是利用`mapExceptT`转化内部。
+tryMapAction :: forall e m a. Monad m => String -> ActionT e m (Maybe a) -> ActionT e m a
+tryMapAction e = mapExceptT f
+  where g (Just a) = Right a
+        g Nothing = Left $ ActionChecked $ YueError e
+        f m = do
+          m' <- m
+          pure $ g =<< m'
