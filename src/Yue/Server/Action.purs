@@ -20,6 +20,7 @@ import Data.Argonaut.Encode.Class (class EncodeJson)
 import Data.Either (hush)
 import Data.HashMap as Map
 import Data.Maybe (Maybe(..))
+import Data.Nullable (toMaybe)
 import Effect.Class (class MonadEffect, liftEffect)
 import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL)
@@ -27,7 +28,7 @@ import Yue.Internal.Type.Action (ActionST(..), ActionT)
 import Yue.Internal.Type.Error (ActionError(..), AppError(..))
 import Yue.Internal.Type.MatchState (MatchState(..))
 import Yue.Internal.Type.Parsable (class Parsable, parseParam)
-import Yue.Internal.Type.Query (lookupQuery)
+import Yue.Internal.Type.Query (lookupQuery, mkQuery)
 import Yue.Internal.Util (setResponseDefHeader, setResponseJson, setResponseText)
 
 askRequest :: forall e m. Monad m => ActionT e m Request
@@ -42,8 +43,8 @@ getURL = asks _.url
 
 tryQuery :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
 tryQuery key = do
-  q <- asks _.query
-  case lookupQuery key =<< q of
+  url <- getURL
+  case lookupQuery key =<< mkQuery <$> toMaybe url.query of
     Nothing -> pure Nothing
     Just v -> withExceptT (ActionInnerError <<< ActionQueryError) $ except $ parseParam v
 query :: forall e m a. Parsable a => Monad m => String -> ActionT e m a
