@@ -25,7 +25,7 @@ import Node.URL (URL)
 import Yue.Internal.Type.Action (ActionST(..), ActionT)
 import Yue.Internal.Type.Error (ActionError(..), AppError(..))
 import Yue.Internal.Type.MatchState (MatchState(..))
-import Yue.Internal.Type.Parsable (class IsParamParsable, parseParam)
+import Yue.Internal.Type.Parsable (class Parsable, parseParam)
 import Yue.Internal.Type.Query (lookupQuery)
 import Yue.Internal.Util (setResponseDefHeader, setResponseJson, setResponseText)
 
@@ -44,11 +44,11 @@ getQuery key = do
   query <- asks _.query
   pure $ lookupQuery key =<< query
 
-tryParam :: forall e m a. IsParamParsable a => Monad m => String -> ActionT e m (Maybe a)
+tryParam :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
 tryParam key = gets f
   where f (MatchState s) = Map.lookup key s.paramMap >>= hush <<< parseParam
 
-param :: forall e m a. IsParamParsable a => Monad m => String -> ActionT e m a
+param :: forall e m a. Parsable a => Monad m => String -> ActionT e m a
 param key = do
   (MatchState s) <- get
   case Map.lookup key s.paramMap of
