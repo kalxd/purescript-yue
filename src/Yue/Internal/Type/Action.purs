@@ -3,7 +3,7 @@ module Yue.Internal.Type.Action where
 
 import Prelude
 
-import Control.Monad.Except.Trans (ExceptT, catchError, mapExceptT, throwError)
+import Control.Monad.Except.Trans (ExceptT, catchError, throwError)
 import Control.Monad.Reader.Trans (ReaderT)
 import Control.Monad.State.Trans (StateT)
 import Data.Either (Either(..))
@@ -42,16 +42,6 @@ throwCheckedMaybe _ (Just a) = pure a
 exceptEither :: forall e m a b. Monad m => Show b => Either b a -> ActionT e m a
 exceptEither (Left e) = throwChecked $ show e
 exceptEither (Right a) = pure a
-
--- 我现在也看不懂了。
--- 核用就是利用`mapExceptT`转化内部。
-tryMapAction :: forall e m a. Monad m => String -> ActionT e m (Maybe a) -> ActionT e m a
-tryMapAction e = mapExceptT f
-  where g (Just a) = Right a
-        g Nothing = Left $ ActionChecked $ YueError e
-        f m = do
-          m' <- m
-          pure $ g =<< m'
 
 catchAction :: forall e m a. Monad m => ActionT e m a -> ActionT e m (Maybe a)
 catchAction action = (Just <$> action) `catchError` f
