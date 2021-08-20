@@ -3,7 +3,7 @@ module Yue.Internal.Type.Action where
 
 import Prelude
 
-import Control.Monad.Except.Trans (ExceptT, mapExceptT, throwError)
+import Control.Monad.Except.Trans (ExceptT, catchError, mapExceptT, throwError)
 import Control.Monad.Reader.Trans (ReaderT)
 import Control.Monad.State.Trans (StateT)
 import Data.Either (Either(..))
@@ -39,8 +39,8 @@ throwCheckedMaybe e Nothing = throwChecked e
 throwCheckedMaybe _ (Just a) = pure a
 
 -- 作用同`except`一致，它只是包装了一层而已。
-exceptEither :: forall e m a. Monad m => Either String a -> ActionT e m a
-exceptEither (Left e) = throwChecked e
+exceptEither :: forall e m a b. Monad m => Show b => Either b a -> ActionT e m a
+exceptEither (Left e) = throwChecked $ show e
 exceptEither (Right a) = pure a
 
 -- 我现在也看不懂了。
@@ -52,3 +52,7 @@ tryMapAction e = mapExceptT f
         f m = do
           m' <- m
           pure $ g =<< m'
+
+catchAction :: forall e m a. Monad m => ActionT e m a -> ActionT e m (Maybe a)
+catchAction action = (Just <$> action) `catchError` f
+  where f _ = pure Nothing

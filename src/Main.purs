@@ -4,20 +4,25 @@ import Prelude
 
 import Data.Maybe (fromMaybe)
 import Effect (Effect)
+import Effect.Aff (Aff)
 import Effect.Console (log)
 import Yue.Internal.Type.Action (ActionT)
 import Yue.Internal.Type.Error (AppError)
 import Yue.Server (runServer)
 import Yue.Server.Action (setText, tryParam)
-import Yue.Server.Header (tryHeader)
+import Yue.Server.Body (json, setJson)
 import Yue.Server.Router (route)
 
-simpleApplication :: ActionT (AppError String) Effect Unit
+type User = { id :: Int
+            , name :: String
+            }
+
+simpleApplication :: ActionT (AppError String) Aff Unit
 simpleApplication = do
   route "/item/:id" do
     route "/a/:a" do
-      h <- tryHeader "Content-Type"
-      setText $ fromMaybe "未知头部" h
+      user :: User <- json
+      setJson user
   route "/pro/:id/i/:addr" do
     id <- tryParam "addr"
     setText $ fromMaybe "什么都没有" $ id

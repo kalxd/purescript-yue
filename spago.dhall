@@ -12,7 +12,8 @@ to generate this file without the comments in this block.
 -}
 { name = "yue"
 , dependencies =
-  [ "argonaut-codecs"
+  [ "aff"
+  , "argonaut-codecs"
   , "argonaut-core"
   , "arrays"
   , "console"
@@ -29,6 +30,7 @@ to generate this file without the comments in this block.
   , "numbers"
   , "prelude"
   , "psci-support"
+  , "refs"
   , "strings"
   , "transformers"
   , "unordered-collections"

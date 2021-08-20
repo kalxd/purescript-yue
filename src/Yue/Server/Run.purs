@@ -10,7 +10,9 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Nullable (toMaybe)
 import Effect (Effect)
-import Node.HTTP (Response, createServer, listen, setStatusCode)
+import Effect.Aff (Aff, launchAff_)
+import Effect.Class (liftEffect)
+import Node.HTTP (Request, Response, createServer, listen, setStatusCode)
 import Yue.Internal.Type.Action (ActionST(..), ActionT, mkActionEnv)
 import Yue.Internal.Type.MatchState (initMatchState)
 import Yue.Internal.Type.Path (mkRequestPath)
@@ -31,15 +33,27 @@ sendActionError _ ActionFinish = pure unit
 sendActionError res (ActionChecked e) = setResponseError res e
 sendActionError res (ActionError e) = setResponseError res e
 
-runServer :: forall e. IsResponseError e => ServerOption -> ActionT e Effect Unit -> Effect Unit -> Effect Unit
-runServer { addr, port } action callback = do
-  server <- createServer \req res -> do
-    let env = mkActionEnv req res
+wrapApplication :: forall e. IsResponseError e
+                   => ActionT e Aff Unit
+                   -> Request
+                   -> Response
+                   -> Effect Unit
+wrapApplication action req res = launchAff_ aff
+  where env = mkActionEnv req res
         st = initMatchState $ mkRequestPath $ fromMaybe "" $ toMaybe env.url.pathname
-    r <- flip evalStateT st $ flip runReaderT env $ runExceptT action
-    case r of
-      (Right o) -> pure o
-      (Left e) -> sendActionError res e
+        aff = do
+          a <- flip evalStateT st $ flip runReaderT env $ runExceptT action
+          case a of
+            (Right _) -> pure unit
+            (Left e) -> liftEffect $ sendActionError res e
+
+runServer :: forall e. IsResponseError e
+             => ServerOption
+             -> ActionT e Aff Unit
+             -> Effect Unit
+             -> Effect Unit
+runServer { addr, port } action callback = do
+  server <- createServer $ wrapApplication action
   listen server option callback
   where option = { backlog: Nothing
                  , hostname: addr
