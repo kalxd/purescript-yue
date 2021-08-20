@@ -1,6 +1,11 @@
 module Yue.Server ( module R
-                  , module A
+                  , module E
                   ) where
 
 import Yue.Server.Run (runServer) as R
-import Yue.Server.Action (finish, header, param, query, setHeader, setJson, setText, throw, throwE, tryHeader, tryParam, tryQuery) as A
+
+import Yue.Server.Header (tryHeader, header, setHeader) as E
+import Yue.Server.Param (tryParam, param) as E
+import Yue.Server.Query (tryQuery, query) as E
+import Yue.Server.Control (finish, throw, throwE) as E
+import Yue.Server.Body (setText, setJson) as E

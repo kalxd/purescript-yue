@@ -8,7 +8,7 @@ import Data.Maybe (Maybe(..))
 import Yue.Internal.Type.Action (ActionT)
 import Yue.Internal.Type.MatchState (MatchState(..), insertParamMap, setMatchPath)
 import Yue.Internal.Type.Path (RequestPath(..), RouterPath, RouterSegment(..), toRouterPath)
-import Yue.Server.Action (finish)
+import Yue.Server.Control (finish)
 
 -- 将请求地址与路由地址进行匹配。
 -- 实现有些乱。
