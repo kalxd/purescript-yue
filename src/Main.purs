@@ -2,15 +2,13 @@ module Main where
 
 import Prelude
 
-import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
 import Yue.Internal.Type.Action (ActionT)
 import Yue.Internal.Type.Error (AppError)
-import Yue.Server (runServer, setText, tryParam)
-import Yue.Server.Body (json', setJson)
-import Yue.Server.Router (route)
+import Yue.Server (get, json, param, post, route, runServer, setJson)
+import Yue.Server.Router (notFound)
 
 type User = { id :: Int
             , name :: String
@@ -21,13 +19,14 @@ defUser = { id: 1, name: "hello"}
 
 simpleApplication :: ActionT (AppError String) Aff Unit
 simpleApplication = do
-  route "/item/:id" do
-    route "/a/:a" do
-      user <- json' defUser
+  route "/item/" do
+    get "/a/:id" do
+      a :: Int <- param "id"
+      setJson a
+    post "/a" do
+      user :: User <- json
       setJson user
-  route "/pro/:id/i/:addr" do
-    id <- tryParam "addr"
-    setText $ fromMaybe "什么都没有" $ id
+  notFound
 
 main :: Effect Unit
 main = do
