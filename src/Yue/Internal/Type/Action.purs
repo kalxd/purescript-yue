@@ -7,7 +7,7 @@ import Control.Monad.Except.Trans (ExceptT, catchError, throwError)
 import Control.Monad.Reader.Trans (ReaderT)
 import Control.Monad.State.Trans (StateT)
 import Data.Either (Either(..))
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL, parse)
 import Yue.Internal.Type.Error (YueError(..))
@@ -46,3 +46,6 @@ exceptEither (Right a) = pure a
 catchAction :: forall e m a. Monad m => ActionT e m a -> ActionT e m (Maybe a)
 catchAction action = (Just <$> action) `catchError` f
   where f _ = pure Nothing
+
+fromMaybeAction :: forall e m a. Monad m => ActionT e m (Maybe a) -> a -> ActionT e m a
+fromMaybeAction action a = fromMaybe a <$> action

@@ -2,25 +2,28 @@ module Main where
 
 import Prelude
 
-import Data.Maybe (Maybe, fromMaybe)
+import Data.Maybe (fromMaybe)
 import Effect (Effect)
 import Effect.Aff (Aff)
 import Effect.Console (log)
 import Yue.Internal.Type.Action (ActionT)
 import Yue.Internal.Type.Error (AppError)
 import Yue.Server (runServer, setText, tryParam)
-import Yue.Server.Body (setJson, tryJson)
+import Yue.Server.Body (json', setJson)
 import Yue.Server.Router (route)
 
 type User = { id :: Int
             , name :: String
             }
 
+defUser :: User
+defUser = { id: 1, name: "hello"}
+
 simpleApplication :: ActionT (AppError String) Aff Unit
 simpleApplication = do
   route "/item/:id" do
     route "/a/:a" do
-      user :: Maybe User <- tryJson
+      user <- json' defUser
       setJson user
   route "/pro/:id/i/:addr" do
     id <- tryParam "addr"

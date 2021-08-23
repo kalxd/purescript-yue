@@ -1,5 +1,6 @@
 module Yue.Server.Body ( tryJson
                        , json
+                       , json'
                        , setText
                        , setJson
                        ) where
@@ -19,7 +20,7 @@ import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
 import Node.HTTP (Request, Response, requestAsStream, responseAsStream)
 import Node.Stream as S
-import Yue.Internal.Type.Action (ActionT, catchAction, exceptEither)
+import Yue.Internal.Type.Action (ActionT, catchAction, exceptEither, fromMaybeAction)
 import Yue.Internal.Util (parseJSON)
 import Yue.Server.Control (finish)
 import Yue.Server.Header (setJsonHeader)
@@ -54,6 +55,9 @@ json = do
 
 tryJson :: forall e a. DecodeJson a => ActionT e Aff (Maybe a)
 tryJson = catchAction json
+
+json' :: forall e a. DecodeJson a => a -> ActionT e Aff a
+json' = fromMaybeAction tryJson
 
 -- | 设置响应体。
 setText :: forall e m. MonadEffect m => String -> ActionT e m Unit
