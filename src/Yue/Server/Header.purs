@@ -1,6 +1,7 @@
 module Yue.Server.Header ( tryHeader
                          , header
                          , setHeader
+                         , setJsonHeader
                          ) where
 
 import Prelude
@@ -27,3 +28,6 @@ setHeader :: forall e m. MonadEffect m => String -> String -> ActionT e m Unit
 setHeader key value = do
   res <- asks _.res
   liftEffect $ HTTP.setHeader res key value
+
+setJsonHeader :: forall e m. MonadEffect m => ActionT e m Unit
+setJsonHeader = setHeader "Content-Type" "application/json"

@@ -9,17 +9,42 @@ import Prelude
 import Control.Monad.Reader.Trans (asks)
 import Data.Argonaut.Decode (class DecodeJson, decodeJson, parseJson)
 import Data.Argonaut.Encode (class EncodeJson)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe)
-import Effect.Aff (Aff)
+import Effect (Effect)
+import Effect.Aff (Aff, makeAff, nonCanceler)
 import Effect.Aff.Class (liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
-import Node.HTTP (Response)
+import Effect.Ref as Ref
+import Node.Encoding (Encoding(..))
+import Node.HTTP (Request, Response, requestAsStream, responseAsStream)
+import Node.Stream as S
 import Yue.Internal.Type.Action (ActionT, catchAction, exceptEither)
-import Yue.Internal.Util (getRequestBodyText, setResponseDefHeader, setResponseJson, setResponseText)
+import Yue.Internal.Util (parseJSON)
 import Yue.Server.Control (finish)
+import Yue.Server.Header (setJsonHeader)
 
 askRes :: forall e m. Monad m => ActionT e m Response
 askRes = asks _.res
+
+getRequestBodyText :: Request -> Aff String
+getRequestBodyText req = makeAff f
+  where r = requestAsStream req
+        f k = do
+          buffer <- Ref.new ""
+          let ok s = Ref.modify_ (_ <> s) buffer
+              no = k <<< Left
+              finish = Ref.read buffer >>= k <<< Right
+          S.onDataString r UTF8 ok
+          S.onEnd r finish
+          S.onError r no
+          pure nonCanceler
+
+setBodyText :: Response -> String -> Effect Unit
+setBodyText res s = do
+  let r = responseAsStream res
+  void $ S.writeString r UTF8 s $ pure unit
+  S.end r $ pure unit
 
 json :: forall e a. DecodeJson a => ActionT e Aff a
 json = do
@@ -27,21 +52,18 @@ json = do
   bodystr <- liftAff $ getRequestBodyText req
   exceptEither $ decodeJson =<< parseJson bodystr
 
-tryJson :: forall e. ActionT e Aff (Maybe String)
+tryJson :: forall e a. DecodeJson a => ActionT e Aff (Maybe a)
 tryJson = catchAction json
 
 -- | 设置响应体。
 setText :: forall e m. MonadEffect m => String -> ActionT e m Unit
 setText text = do
   res <- askRes
-  liftEffect $ setResponseText res text
+  liftEffect $ setBodyText res text
   finish
 
 -- | 设置响应体。
 setJson :: forall e m a. EncodeJson a => MonadEffect m => a -> ActionT e m Unit
 setJson a = do
-  res <- askRes
-  liftEffect do
-    setResponseDefHeader res
-    setResponseJson res a
-  finish
+  setJsonHeader
+  setText $ parseJSON a
