@@ -1,15 +1,17 @@
 module Yue.Internal.Type.Query where
 
-import Control.Category ((<<<))
+import Prelude
+
 import Data.Maybe (Maybe)
+import Foreign (Foreign, unsafeFromForeign)
 import Foreign.Object (Object, lookup)
 import Node.URL as URL
 import Unsafe.Coerce (unsafeCoerce)
 
-newtype Query a = Query (Object a)
+newtype Query = Query (Object Foreign)
 
-mkQuery :: forall a. String -> Query a
+mkQuery :: String -> Query
 mkQuery = Query <<< unsafeCoerce <<< URL.parseQueryString
 
-lookupQuery :: forall a. String -> Query a -> Maybe a
-lookupQuery key (Query o) = lookup key o
+lookupQuery :: String -> Query -> Maybe (Array String)
+lookupQuery key (Query o) = unsafeFromForeign <$> lookup key o
