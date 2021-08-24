@@ -88,5 +88,5 @@ delete = matchMethod I.DELETE
 
 notFound :: forall e m. MonadEffect m => ActionT e m Unit
 notFound = do
-  setCode 400
+  setCode 404
   setJson $ packErrorResponse "api不存在"
