@@ -3,7 +3,7 @@ module Yue.Internal.Type.Error where
 
 import Prelude
 
-import Data.Argonaut.Core (Json, fromString, jsonSingletonObject)
+import Data.Argonaut.Core (Json, jsonSingletonObject)
 import Data.Argonaut.Encode (class EncodeJson, encodeJson)
 import Yue.Internal.Type.ResponseError (class IsResponseError, errorStatus)
 
@@ -30,4 +30,4 @@ instance Show YueError where
 
 instance IsResponseError YueError where
   errorStatus _ = 401
-  errorContent = fromString <<< show
+  errorContent = packErrorResponse <<< show
