@@ -16,46 +16,58 @@ import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
 import Node.HTTP (requestMethod)
 import Yue.Internal.Type.Action (ActionT)
-import Yue.Internal.Type.MatchState (MatchState(..), insertParamMap, setMatchPath)
+import Yue.Internal.Type.MatchState (MatchState(..), insertParamMap, unconsPath)
 import Yue.Internal.Type.Method (Method(..), fromString) as I
 import Yue.Internal.Type.Path (RequestPath(..), RouterPath, RouterSegment(..), toRouterPath)
 import Yue.Server.Body (setJson)
-import Yue.Server.Control (finish)
 
--- 将请求地址与路由地址进行匹配。
--- 实现有些乱。
-matchRouterPath :: MatchState -> RouterPath -> Maybe (MatchState)
-matchRouterPath rs [] = Just rs
-matchRouterPath state@(MatchState s) xs = do
-  let (RequestPath rs) = s.path
-  r <- uncons rs
+-- 准确匹配。
+matchExactPath :: MatchState -> RouterPath -> Maybe (MatchState)
+matchExactPath state@(MatchState { path: RequestPath [] }) [] = Just state
+matchExactPath state xs = do
+  ms <- unconsPath state
   x <- uncons xs
   case x.head of
-    RouterParam key -> let s' = insertParamMap key r.head state
-                           s'' = setMatchPath r.tail s'
-                        in matchRouterPath s'' x.tail
-    RouterLit name -> if r.head == name
-                      then let s' = setMatchPath r.tail state
-                           in matchRouterPath s' x.tail
-                      else Nothing
+    RouterParam key -> let s' = insertParamMap key ms.head ms.rest
+                        in matchExactPath s' x.tail
+    RouterLit name | name == ms.head  -> matchExactPath ms.rest x.tail
+                   | otherwise -> Nothing
+
+-- 将请求地址与路由地址进行匹配。
+matchPrefixPath :: MatchState -> RouterPath -> Maybe (MatchState)
+matchPrefixPath rs [] = Just rs
+matchPrefixPath state xs = do
+  ms <- unconsPath state
+  x <- uncons xs
+  case x.head of
+    RouterParam key -> let s' = insertParamMap key ms.head ms.rest
+                        in matchPrefixPath s' x.tail
+    RouterLit name | name == ms.head  -> matchPrefixPath ms.rest x.tail
+                   | otherwise -> Nothing
 
 -- | 匹配满足访问地址的路由，不对method作区别。
+-- | 前面满足即可。
 route :: forall e m a. Monad m => String -> ActionT e m a -> ActionT e m Unit
 route path action = do
   s <- TR.get
   let routerPath = toRouterPath path
-  case matchRouterPath s routerPath of
+  case matchPrefixPath s routerPath of
     Just s' -> do
       TR.put s'
       void $ action
-      finish
     Nothing -> pure unit
 
 matchMethod :: forall e m a. Monad m => I.Method -> String -> ActionT e m a -> ActionT e m Unit
 matchMethod method path action = do
   req <- TR.asks _.req
+  s <- TR.get
+  let routerPath = toRouterPath path
   when (Just method == (I.fromString $ requestMethod req)) do
-    route path action
+    case matchExactPath s routerPath of
+      Just s' -> do
+        TR.put s'
+        void $ action
+      Nothing -> pure unit
 
 get :: forall e m a. Monad m => String -> ActionT e m a -> ActionT e m Unit
 get = matchMethod I.GET

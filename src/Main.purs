@@ -7,7 +7,7 @@ import Effect.Aff (Aff)
 import Effect.Console (log)
 import Yue.Internal.Type.Action (ActionT)
 import Yue.Internal.Type.Error (AppError)
-import Yue.Server (get, json, param, post, route, runServer, setJson)
+import Yue.Server (get, json, param, post, route, runServer, setJson, setText)
 import Yue.Server.Router (notFound)
 
 type User = { id :: Int
@@ -26,6 +26,10 @@ simpleApplication = do
     post "/a" do
       user :: User <- json
       setJson user
+
+  route "/menu" do
+    get "/b" do
+      setText "hello world"
   notFound
 
 main :: Effect Unit

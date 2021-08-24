@@ -1,6 +1,10 @@
 module Yue.Internal.Type.MatchState where
 
+import Prelude
+
+import Data.Array (uncons)
 import Data.HashMap (HashMap, empty, insert)
+import Data.Maybe (Maybe)
 import Data.String.NonEmpty as NEString
 import Yue.Internal.Type.Path (RequestPath(..))
 
@@ -19,7 +23,11 @@ insertParamMap k v (MatchState s) = MatchState s { paramMap = map }
         key = NEString.toString k
         value = NEString.toString v
 
-setMatchPath :: Array NEString.NonEmptyString -> MatchState -> MatchState
-setMatchPath path (MatchState s) = MatchState s'
-  where s' = s { path = path' }
-        path' = RequestPath path
+-- | 弹出第一个路径。
+unconsPath :: MatchState -> Maybe { head :: NEString.NonEmptyString , rest :: MatchState }
+unconsPath (MatchState s) = do
+  let RequestPath path = s.path
+  p <- uncons path
+  pure { head: p.head
+       , rest: MatchState $ s { path = RequestPath p.tail }
+       }
