@@ -20,7 +20,7 @@ import Yue.Internal.Type.Action (ActionST(..), ActionT, mkActionEnv)
 import Yue.Internal.Type.MatchState (initMatchState)
 import Yue.Internal.Type.Path (mkRequestPath)
 import Yue.Internal.Type.ResponseError (class IsResponseError, errorContent, errorStatus)
-import Yue.Server.Config (ServerOption)
+import Yue.Server.Option (ServerOption)
 
 setResponseError :: forall e. IsResponseError e => Response -> e -> Effect Unit
 setResponseError res e = do
