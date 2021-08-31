@@ -1,4 +1,5 @@
 module Yue.Server.Run ( runServer
+                      , runServerT
                       ) where
 
 import Prelude
@@ -37,29 +38,41 @@ sendActionError _ ActionFinish = pure unit
 sendActionError res (ActionChecked e) = setResponseError res e
 sendActionError res (ActionError e) = setResponseError res e
 
-wrapApplication :: forall e. IsResponseError e
-                   => ActionT e Aff Unit
-                   -> Request
-                   -> Response
-                   -> Effect Unit
-wrapApplication action req res = launchAff_ aff
-  where env = mkActionEnv req res
-        st = initMatchState $ mkRequestPath $ fromMaybe "" $ toMaybe env.url.pathname
-        aff = do
-          a <- flip evalStateT st $ flip runReaderT env $ runExceptT action
-          case a of
-            (Right _) -> pure unit
-            (Left e) -> liftEffect $ sendActionError res e
-
 runServer :: forall e. IsResponseError e
              => ServerOption
              -> ActionT e Aff Unit
              -> Effect Unit
              -> Effect Unit
-runServer { addr, port } action callback = do
-  server <- createServer $ wrapApplication action
-  listen server option callback
-  where option = { backlog: Nothing
-                 , hostname: addr
-                 , port
-                 }
+runServer = runServerT identity
+
+buildApplication :: forall e m a. IsResponseError e
+                    => Monad m
+                    => (m (Either (ActionST e) a) -> Aff (Either (ActionST e) a))
+                    -> ActionT e m a
+                    -> Request
+                    -> Response
+                    -> Effect Unit
+buildApplication trans action req res = launchAff_ aff
+  where env = mkActionEnv req res
+        st = initMatchState $ mkRequestPath $ fromMaybe "" $ toMaybe env.url.pathname
+        ma = flip evalStateT st $ flip runReaderT env $ runExceptT action
+        aff = do
+          a <- trans ma
+          case a of
+            (Right _) -> pure unit
+            (Left e) -> liftEffect $ sendActionError res e
+
+runServerT :: forall e m a. IsResponseError e
+              => Monad m
+              => (m (Either (ActionST e) a) -> Aff (Either (ActionST e ) a))
+              -> ServerOption
+              -> ActionT e m a
+              -> Effect Unit
+              -> Effect Unit
+runServerT trans option action callback = do
+  server <- createServer $ buildApplication trans action
+  let option' = { backlog: Nothing
+                , hostname: option.addr
+                , port: option.port
+                }
+  listen server option' callback
