@@ -37,12 +37,12 @@ sendActionError _ ActionFinish = pure unit
 sendActionError res (ActionChecked e) = setResponseError res e
 sendActionError res (ActionError e) = setResponseError res e
 
-wrapApplication :: forall e. IsResponseError e
+buildApplication :: forall e. IsResponseError e
                    => ActionT e Aff Unit
                    -> Request
                    -> Response
                    -> Effect Unit
-wrapApplication action req res = launchAff_ aff
+buildApplication action req res = launchAff_ aff
   where env = mkActionEnv req res
         st = initMatchState $ mkRequestPath $ fromMaybe "" $ toMaybe env.url.pathname
         aff = do
@@ -57,7 +57,7 @@ runServer :: forall e. IsResponseError e
              -> Effect Unit
              -> Effect Unit
 runServer { addr, port } action callback = do
-  server <- createServer $ wrapApplication action
+  server <- createServer $ buildApplication action
   listen server option callback
   where option = { backlog: Nothing
                  , hostname: addr
