@@ -39,4 +39,6 @@ to generate this file without the comments in this block.
   ]
 , packages = ./packages.dhall
 , sources = [ "src/**/*.purs" ]
+, license = "AGPL v3"
+, repository = "https://github.com/kalxd/purescript-yue"
 }
