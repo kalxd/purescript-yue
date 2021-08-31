@@ -1,4 +1,4 @@
-module Yue.Type.Default where
+module Yue.Internal.Type.Default where
 
 import Data.Maybe (Maybe(..))
 
