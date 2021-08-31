@@ -16,7 +16,6 @@ to generate this file without the comments in this block.
   , "argonaut-codecs"
   , "argonaut-core"
   , "arrays"
-  , "console"
   , "effect"
   , "either"
   , "foldable-traversable"
@@ -39,5 +38,5 @@ to generate this file without the comments in this block.
   , "unsafe-coerce"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs" ]
 }
