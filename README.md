@@ -31,7 +31,6 @@ option = { addr: "127.0.0.1"
 
 main :: Effect Unit
 main = runServer option application $ log "服务启动了！"
-###  ###
 ```
 
 ## 多条路由 ##
