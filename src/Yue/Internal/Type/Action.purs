@@ -3,9 +3,9 @@ module Yue.Internal.Type.Action where
 
 import Prelude
 
-import Control.Monad.Except.Trans (ExceptT, catchError, mapExceptT, throwError)
-import Control.Monad.Reader.Trans (ReaderT, mapReaderT)
-import Control.Monad.State.Trans (StateT, mapStateT)
+import Control.Monad.Except.Trans (ExceptT, catchError, throwError)
+import Control.Monad.Reader.Trans (ReaderT)
+import Control.Monad.State.Trans (StateT)
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..), fromMaybe)
 import Node.HTTP (Request, Response, requestURL)
@@ -49,8 +49,3 @@ catchAction action = (Just <$> action) `catchError` f
 
 fromMaybeAction :: forall e m a. Monad m => ActionT e m (Maybe a) -> a -> ActionT e m a
 fromMaybeAction action a = fromMaybe a <$> action
-
-mapActionT :: forall e m1 m2 a. (forall b. m1 b -> m2 b) -> ActionT e m1 a -> ActionT e m2 a
-mapActionT f = mapExceptT g
-  where g = mapReaderT h
-        h = mapStateT f
