@@ -1,4 +1,5 @@
 module Yue.Server.Run ( runServer
+                      , runServerAt
                       ) where
 
 import Prelude
@@ -63,3 +64,12 @@ runServer { addr, port } action callback = do
                  , hostname: addr
                  , port
                  }
+
+runServerAt :: forall e. IsResponseError e
+               => Int
+               -> ActionT e Aff Unit
+               -> Effect Unit
+               -> Effect Unit
+runServerAt port = runServer { addr: "127.0.0.1"
+                             , port
+                             }
