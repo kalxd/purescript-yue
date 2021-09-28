@@ -11,7 +11,8 @@ import Prelude
 
 import Control.Monad.Reader.Trans (asks) as TR
 import Control.Monad.State.Trans (get, put) as TR
-import Data.Array (uncons)
+import Data.List (uncons)
+import Data.List.Types (List(..))
 import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
 import Node.HTTP (requestMethod)
@@ -25,7 +26,7 @@ import Yue.Server.Header (setCode)
 
 -- 准确匹配。
 matchExactPath :: MatchState -> RouterPath -> Maybe (MatchState)
-matchExactPath state@(MatchState { path: RequestPath [] }) [] = Just state
+matchExactPath state@(MatchState { path: RequestPath Nil }) Nil = Just state
 matchExactPath state xs = do
   ms <- unconsPath state
   x <- uncons xs
@@ -37,7 +38,7 @@ matchExactPath state xs = do
 
 -- 将请求地址与路由地址进行匹配。
 matchPrefixPath :: MatchState -> RouterPath -> Maybe (MatchState)
-matchPrefixPath rs [] = Just rs
+matchPrefixPath rs Nil = Just rs
 matchPrefixPath state xs = do
   ms <- unconsPath state
   x <- uncons xs

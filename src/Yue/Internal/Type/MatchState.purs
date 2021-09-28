@@ -2,7 +2,7 @@ module Yue.Internal.Type.MatchState where
 
 import Prelude
 
-import Data.Array (uncons)
+import Data.List (uncons)
 import Data.HashMap (HashMap, empty, insert)
 import Data.Maybe (Maybe)
 import Data.String.NonEmpty as NEString
