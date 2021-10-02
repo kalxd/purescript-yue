@@ -14,7 +14,7 @@ import Data.Either (Either(..))
 import Data.Maybe (Maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, makeAff, nonCanceler)
-import Effect.Aff.Class (liftAff)
+import Effect.Aff.Class (class MonadAff, liftAff)
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
@@ -47,16 +47,16 @@ setBodyText res s = do
   void $ S.writeString r UTF8 s $ pure unit
   S.end r $ pure unit
 
-json :: forall e a. DecodeJson a => ActionT e Aff a
+json :: forall e m a. MonadAff m => DecodeJson a => ActionT e m a
 json = do
   req <- asks _.req
   bodystr <- liftAff $ getRequestBodyText req
   exceptEither $ decodeJson =<< parseJson bodystr
 
-tryJson :: forall e a. DecodeJson a => ActionT e Aff (Maybe a)
+tryJson :: forall e m a. MonadAff m =>  DecodeJson a => ActionT e m (Maybe a)
 tryJson = catchAction json
 
-json' :: forall e a. DecodeJson a => a -> ActionT e Aff a
+json' :: forall e m a. MonadAff m => DecodeJson a => a -> ActionT e m a
 json' = fromMaybeAction tryJson
 
 -- | 设置响应体。
