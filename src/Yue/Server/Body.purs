@@ -8,9 +8,9 @@ module Yue.Server.Body ( tryJson
 import Prelude
 
 import Control.Monad.Reader.Trans (asks)
-import Data.Argonaut.Decode (class DecodeJson, decodeJson, parseJson)
+import Data.Argonaut.Decode (class DecodeJson, JsonDecodeError, decodeJson, parseJson)
 import Data.Argonaut.Encode (class EncodeJson)
-import Data.Either (Either(..))
+import Data.Either (Either(..), hush)
 import Data.Maybe (Maybe)
 import Effect (Effect)
 import Effect.Aff (Aff, makeAff, nonCanceler)
@@ -20,7 +20,7 @@ import Effect.Ref as Ref
 import Node.Encoding (Encoding(..))
 import Node.HTTP (Request, Response, requestAsStream, responseAsStream)
 import Node.Stream as S
-import Yue.Internal.Type.Action (ActionT, catchAction, exceptEither, fromMaybeAction)
+import Yue.Internal.Type.Action (ActionT, fromMaybeAction)
 import Yue.Internal.Util (parseJSON)
 import Yue.Server.Control (finish)
 import Yue.Server.Header (setJsonHeader)
@@ -28,8 +28,8 @@ import Yue.Server.Header (setJsonHeader)
 askRes :: forall e m. Monad m => ActionT e m Response
 askRes = asks _.res
 
-getRequestBodyText :: Request -> Aff String
-getRequestBodyText req = makeAff f
+readRequestBody :: Request -> Aff String
+readRequestBody req = makeAff f
   where r = requestAsStream req
         f k = do
           buffer <- Ref.new ""
@@ -47,14 +47,14 @@ setBodyText res s = do
   void $ S.writeString r UTF8 s $ pure unit
   S.end r $ pure unit
 
-json :: forall e m a. MonadAff m => DecodeJson a => ActionT e m a
+json :: forall e m a. MonadAff m => DecodeJson a => ActionT e m (Either JsonDecodeError a)
 json = do
   req <- asks _.req
-  bodystr <- liftAff $ getRequestBodyText req
-  exceptEither $ decodeJson =<< parseJson bodystr
+  bodystr <- liftAff $ readRequestBody req
+  pure $ decodeJson =<< parseJson bodystr
 
 tryJson :: forall e m a. MonadAff m =>  DecodeJson a => ActionT e m (Maybe a)
-tryJson = catchAction json
+tryJson = hush <$> json
 
 json' :: forall e m a. MonadAff m => DecodeJson a => a -> ActionT e m a
 json' = fromMaybeAction tryJson
