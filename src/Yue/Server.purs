@@ -1,11 +1,8 @@
 module Yue.Server ( module S
                   , module R
                   , module E
-                  , module Aff
                   ) where
 
-import Effect.Aff (Aff) as Aff
-import Effect.Aff.Class (class MonadAff, liftAff) as Aff
 import Yue.Internal.Type.Action (ActionT) as E
 
 import Yue.Server.Body (json, json', setJson, setText, tryJson) as E
