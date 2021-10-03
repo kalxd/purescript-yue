@@ -9,12 +9,10 @@ import Control.Monad.State.Trans (StateT)
 import Data.Maybe (Maybe, fromMaybe)
 import Node.HTTP (Request, Response, requestURL)
 import Node.URL (URL, parse)
-import Yue.Internal.Type.Error (YueError)
 import Yue.Internal.Type.MatchState (MatchState)
 
 -- | 一条请求因何而中断。
 data ActionST e = ActionFinish -- ^ 中断信号。
-                | ActionChecked YueError -- ^ 已知的内部错误。
                 | ActionError e -- ^ 用户自定义错误。
 
 -- | 请求的全部原始上下文，其中也包含预处理过的信息，如query、path。

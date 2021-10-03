@@ -35,7 +35,6 @@ setResponseError res e = do
 
 sendActionError :: forall e. IsResponseError e => Response -> ActionST e -> Effect Unit
 sendActionError _ ActionFinish = pure unit
-sendActionError res (ActionChecked e) = setResponseError res e
 sendActionError res (ActionError e) = setResponseError res e
 
 buildApplication :: forall e. IsResponseError e
