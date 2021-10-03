@@ -4,3 +4,8 @@ module Yue.Server.Option where
 type ServerOption = { addr :: String
                     , port :: Int
                     }
+
+defServerOption :: ServerOption
+defServerOption = { addr: "127.0.0.1"
+                  , port: 3000
+                  }
