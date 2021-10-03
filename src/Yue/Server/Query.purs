@@ -32,6 +32,9 @@ instance Show QueryError where
 queryNotFound :: forall a. String -> Either QueryError a
 queryNotFound = Left <<< QueryNotFound
 
+fmtQueryFail :: String -> String -> QueryError
+fmtQueryFail key msg = QueryParseFail $ "解析query的" <> key <> "字段失败：" <> msg
+
 askQuery :: forall e m. Monad m => ActionT e m (Either QueryError Query)
 askQuery = f <$> toMaybe <$> asks _.url.query
   where f Nothing = queryNotFound "query参数为空！"
@@ -41,7 +44,7 @@ queryList :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Eithe
 queryList key = (join <<< map f) <$> askQuery
   where f q = case lookupQuery key q of
           Nothing -> queryNotFound $ "query没有" <> key <> "字段！"
-          Just xs -> mapLeft QueryParseFail $ traverse parseParam xs
+          Just xs -> mapLeft (fmtQueryFail key) $ traverse parseParam xs
 
 tryQueryList :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe (Array a))
 tryQueryList key = hush <$> queryList key
@@ -56,7 +59,7 @@ query key = do
     x <- head <$> xs
     case x of
       Nothing -> queryNotFound $ "query没有" <> key <> "字段！"
-      Just x' -> mapLeft QueryParseFail $ parseParam x'
+      Just x' -> mapLeft (fmtQueryFail key) $ parseParam x'
 
 tryQuery :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
 tryQuery key = hush <$> query key
