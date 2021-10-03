@@ -17,11 +17,9 @@ import Data.Maybe (Maybe(..))
 import Effect.Class (class MonadEffect)
 import Node.HTTP (requestMethod)
 import Yue.Internal.Type.Action (ActionT)
-import Yue.Internal.Type.Error (packErrorResponse)
 import Yue.Internal.Type.MatchState (MatchState(..), insertParamMap, unconsPath)
 import Yue.Internal.Type.Method (Method(..), fromString) as I
 import Yue.Internal.Type.Path (RequestPath(..), RouterPath, RouterSegment(..), toRouterPath)
-import Yue.Server.Body (setJson)
 import Yue.Server.Header (setCode)
 
 -- 准确匹配。
@@ -88,6 +86,4 @@ delete :: forall e m a. Monad m => String -> ActionT e m a -> ActionT e m Unit
 delete = matchMethod I.DELETE
 
 notFound :: forall e m. MonadEffect m => ActionT e m Unit
-notFound = do
-  setCode 404
-  setJson $ packErrorResponse "api不存在"
+notFound = setCode 404
