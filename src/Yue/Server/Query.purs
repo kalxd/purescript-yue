@@ -4,45 +4,62 @@ module Yue.Server.Query ( queryList
                         , query
                         , tryQuery
                         , query'
+                        , QueryError(..)
                         ) where
 
 import Prelude
 
 import Control.Monad.Reader.Trans (asks)
 import Data.Array (head)
+import Data.Either (Either(..), hush)
 import Data.Maybe (Maybe(..))
 import Data.Nullable (toMaybe)
 import Data.Traversable (traverse)
-import Yue.Internal.Type.Action (ActionT, catchAction, exceptEither, fromMaybeAction, throwChecked, throwCheckedMaybe)
+import Yue.Internal.Type.Action (ActionT, fromMaybeAction)
 import Yue.Internal.Type.Parsable (class Parsable, parseParam)
 import Yue.Internal.Type.Query (Query, lookupQuery, mkQuery)
+import Yue.Internal.Util (mapLeft)
 
-askQuery :: forall e m. Monad m => ActionT e m Query
-askQuery = mkQuery <$> (throwCheckedMaybe msg =<< toMaybe <$> asks _.url.query)
-  where msg = "query参数为空！"
+data QueryError = QueryNotFound String
+                | QueryParseFail String
 
-queryList :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Array a)
-queryList key = do
-  q <- askQuery
-  case lookupQuery key q of
-    Nothing -> throwChecked "query为空！"
-    Just xs -> exceptEither $ traverse parseParam xs
+derive instance Eq QueryError
+
+instance Show QueryError where
+  show (QueryNotFound msg) = show msg
+  show (QueryParseFail msg) = show msg
+
+queryNotFound :: forall a. String -> Either QueryError a
+queryNotFound = Left <<< QueryNotFound
+
+askQuery :: forall e m. Monad m => ActionT e m (Either QueryError Query)
+askQuery = f <$> toMaybe <$> asks _.url.query
+  where f Nothing = queryNotFound "query参数为空！"
+        f (Just a) = Right $ mkQuery a
+
+queryList :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Either QueryError (Array a))
+queryList key = (join <<< map f) <$> askQuery
+  where f q = case lookupQuery key q of
+          Nothing -> queryNotFound $ "query没有" <> key <> "字段！"
+          Just xs -> mapLeft QueryParseFail $ traverse parseParam xs
 
 tryQueryList :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe (Array a))
-tryQueryList = catchAction <<< queryList
+tryQueryList key = hush <$> queryList key
 
 queryList' :: forall e m a. Parsable a => Monad m => Array a -> String -> ActionT e m (Array a)
 queryList' def key = fromMaybeAction (tryQueryList key) def
 
-query :: forall e m a. Parsable a => Monad m => String -> ActionT e m a
+query :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Either QueryError a)
 query key = do
-  xs <- tryQueryList key
-  case head =<< xs of
-    Nothing -> throwChecked $ "query参数不存在" <> key <> "！"
-    Just x -> exceptEither $ parseParam x
+  xs <- queryList key
+  pure do
+    x <- head <$> xs
+    case x of
+      Nothing -> queryNotFound $ "query没有" <> key <> "字段！"
+      Just x' -> mapLeft QueryParseFail $ parseParam x'
 
 tryQuery :: forall e m a. Parsable a => Monad m => String -> ActionT e m (Maybe a)
-tryQuery = catchAction <<< query
+tryQuery key = hush <$> query key
 
 query' :: forall e m a. Parsable a => Monad m => a -> String -> ActionT e m a
 query' def key = fromMaybeAction (tryQuery key) def
