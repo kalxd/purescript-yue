@@ -15,6 +15,8 @@ import Yue.Internal.Type.MatchState (MatchState)
 data ActionST e = ActionFinish -- ^ 中断信号。
                 | ActionError e -- ^ 用户自定义错误。
 
+derive instance Functor ActionST
+
 -- | 请求的全部原始上下文，其中也包含预处理过的信息，如query、path。
 type ActionEnv = { req :: Request
                  , res :: Response
