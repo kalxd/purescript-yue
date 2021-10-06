@@ -10,11 +10,11 @@ module Yue.Server.Action ( mapActionT
 
 import Prelude
 
-import Control.Monad.Except.Trans (mapExceptT)
+import Control.Monad.Except.Trans (except, mapExceptT)
 import Control.Monad.Reader.Trans (class MonadReader, ask, asks, mapReaderT)
 import Control.Monad.State.Trans (class MonadState, get, gets, mapStateT, modify, put)
 import Control.Monad.Trans.Class (lift)
-import Data.Either (Either(..))
+import Data.Either (Either)
 import Yue.Internal.Type.Action (ActionST(..), ActionT)
 import Yue.Internal.Util (mapLeft)
 
@@ -23,12 +23,10 @@ mapActionT f = mapExceptT g
   where g = mapReaderT h
         h = mapStateT f
 
-shadowActionError :: forall e1 e2 m a. Monad m => (e1 -> e2) -> ActionT e1 m (Either e2 a) -> ActionT e2 m a
-shadowActionError f = mapExceptT \ma -> do
-  a <- ma
-  pure $ case a of
-    Right a' -> mapLeft ActionError a'
-    Left e -> Left $ f <$> e
+shadowActionError :: forall e' e m a. Monad m => (e -> e') -> ActionT e' m (Either e a) -> ActionT e' m a
+shadowActionError f action = do
+  a <- action
+  except $ mapLeft (ActionError <<< f) a
 
 askState :: forall e m a. MonadReader a m => ActionT e m a
 askState = lift $ lift ask
