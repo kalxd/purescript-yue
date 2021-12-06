@@ -51,8 +51,8 @@ buildApplication action req res = launchAff_ aff
             (Right _) -> pure unit
             (Left e) -> liftEffect $ sendActionError res e
 
-runServer :: forall e. IsResponseError e
-             => ServerOption
+runServer :: forall e r. IsResponseError e
+             => ServerOption r
              -> ActionT e Aff Unit
              -> Effect Unit
              -> Effect Unit
